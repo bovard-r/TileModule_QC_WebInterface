@@ -7,13 +7,17 @@ import board_check_functions
 import os
 from connect import connect, get_base_url
 from home_page_list import add_module
+import yaml
 
 base_url = get_base_url()
 db = connect(1)
 cur = db.cursor()
 
+tile_map = yaml.safe_load(open("tile_mapping.yaml","r"))
+
 def get_tiles(barcode):
-    return {"06": 16, "S1": 4}
+    tc = "TM-" + barcode[5:8]
+    return tile_map[tc]
 
 #cgi header
 print("Content-type: text/html\n")

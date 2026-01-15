@@ -64,7 +64,12 @@ else:
         print('<form action="board_checkin.py" method="post" enctype="multipart/form-data">')
     print("<div class='row'>")
     print('<div class = "col-md-6 pt-4 ps-4 mx-2 my-2">')
-    print('<h2>Add a New Tile Board</h2>')
+    if major_type == "TQ":
+        print('<h2>Add a New Protomodule</h2>')
+    elif major_type == "TB":
+        print('<h2>Add a New Tile Board</h2>')
+    if major_type == "TM":
+        print('<h2>Add a New Tile Module</h2>')
     print("</div>")
     print("</div>")
 
