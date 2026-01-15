@@ -101,7 +101,7 @@ def render_list_tests():
         print('<div class="col-md-11 mx-4 my-4"><table class="table table-bordered table-hover table-active">')
         print(f"<h2>{name}</h2>")
         if name == "Tile Modules":
-            print('<tr><th>Subtype<th>Name<th>Total Assembled<th>Awaiting Testing<th>QC Passed, Awaiting Registration<th>Ready for Cassette Assembly<th>In Detector<th>Failed QC</tr>')
+            print('<tr><th>Subtype<th>Name<th>Total Assembled<th>Awaiting Testing<th>QC Passed, Awaiting Registration<th>Ready for Cassette Assembly<th>Shipped<th>Failed QC</tr>')
         else:
             print('<tr><th>Subtype<th>Name<th>Total Received<th>Awaiting Testing<th>QC Passed, Awaiting Assembly<th>Assembled<th>Failed QC</tr>')
 
