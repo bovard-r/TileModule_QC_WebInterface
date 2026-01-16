@@ -33,12 +33,13 @@ except:
     print('</div>')
 
 serial_numbers = csv_file.decode('utf-8')
+serial_numbers = [line.strip() for line in serial_numbers.splitlines()]
 
 cur.execute('select test_type from Test_Type where name="Registered"')
 reg_test_type_id = cur.fetchall()[0][0]
 
 upload = True
-for i, sn in enumerate(serial_numbers.strip().split('\n')):
+for i, sn in enumerate(serial_numbers):
     cur.execute('select board_id from Board where full_id="%s"' % sn)
     try:
         board_id = cur.fetchall()[0][0]

@@ -36,17 +36,28 @@ if action == "submit":
 
         mat = module[8]
 
-        tq = "320TQ" + pcb_barcode[5:8] + mat + pcb_barcode[8] + pcb_barcode[10:]
+        tq = "320TQ" + module[5:8] + mat + pcb_barcode[8] + pcb_barcode[10:]
 
         sn = module[9:15]
 
         type_id = module[3:9]
 
         cur.execute('update Board set sn="%s", full_id="%s", type_id="%s" where full_id="%s"' % (sn, module, type_id, tq))
-        cur.execute('update Check_Out set comment="%s"' % f"Used in {module}")
         db.commit()
 
-        print("New module created successfully")
+        cur.execute("select * from Board where full_id='%s'" % module)
+        rows = cur.fetchall()
+        if rows:
+            cur.execute('select board_id from Board where full_id="%s"' % pcb_barcode)
+            pcb_id = cur.fetchall()[0][0]
+            cur.execute("update Board set location='%s' where board_id=%s" % (module, pcb_id))
+            cur.execute('update Check_Out set comment="%s" where board_id=%s' % (f"Used in {module}", pcb_id))
+            db.commit()
+
+            print("New module created successfully")
+
+        else:
+            print("Error: module barcode is not the same type as pcb")
 
     else:
         add_module(pcb_barcode, "Maryland", "Fermilab")
@@ -56,12 +67,19 @@ if action == "submit":
 
         board_check_functions.board_checkin(board_id, person_id, comments)
 
+        cur.execute(f'insert into COMPONENT_STOCK (barcode, typecode, entered) values ("{pcb_barcode}", "{pcb_barcode[3:5] + "-" + pcb_barcode[5:8]}", NOW())')
+        db.commit()
+
 else:
 
     if major_type == "TQ":
-        print('<form action="board_checkin2.py" method="post" enctype="multipart/form-data">')
+        print('''
+        <form action="board_checkin2.py" method="post" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter';">
+        ''')
     else:
-        print('<form action="board_checkin.py" method="post" enctype="multipart/form-data">')
+        print('''
+        <form action="board_checkin.py" method="post" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter';">
+        ''')
     print("<div class='row'>")
     print('<div class = "col-md-6 pt-4 ps-4 mx-2 my-2">')
     if major_type == "TQ":

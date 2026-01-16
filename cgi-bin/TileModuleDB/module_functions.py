@@ -103,22 +103,7 @@ def add_test_tab(barcode, board_id):
     print('</div>')
     print('<div class="col-md-2 ps-5 pt-2 my-2">')
     print('<a href="board_checkout.py?full_id=%(full_id)s">' %{'full_id':barcode})
-    print('<button class="btn btn-dark"> Checkout Board </button>')
-    print('</a>')
-    print('</div>')
-    print('<div class="col-md-2 ps-5 pt-2 my-2">')
-    print('<a href="add_board_image.py?board_id=%(id)d&full_id=%(full_id)s">' %{'full_id':barcode, 'id':board_id})
-    print('<button class="btn btn-dark"> Add Board Image </button>')
-    print('</a>')
-    print('</div>')
-    print('<div class="col-md-2 ps-5 pt-2 my-2">')
-    print('<a href="change_board_location.py?board_id=?board_id=%(id)d&full_id=%(full_id)s">' %{'full_id':barcode, 'id':board_id})
-    print('<button class="btn btn-dark"> Update Location </button>')
-    print('</a>')
-    print('</div>')
-    print('<div class="col-md-2 ps-5 pt-2 my-2">')
-    print('<a href="board_grade.py?board_id=?board_id=%(id)d&full_id=%(full_id)s">' %{'full_id':barcode, 'id':board_id})
-    print('<button class="btn btn-dark"> Grade Board </button>')
+    print('<button class="btn btn-dark"> Mark as shipped </button>')
     print('</a>')
     print('</div>')
     print('</div>')
@@ -157,7 +142,7 @@ def ePortageTest(test_type_id, board_sn, test_name):
             # checks if the test was successful
             if successful[i][0] == 1:
                 print('<td align=left; class="table-success"> Yes </td>')
-                print("<td align=right style='{ background-color: yellow; }' ><a href='revoke_success.py?test_id=%(id)s'>Revoke</a></td>" %{ "id":test_id[i]})
+                print("<td align=right style='{ background-color: yellow; }' ></td>" %{ "id":test_id[i]})
 
             else:
                 print('<td colspan=2; class="table-danger">No</td>')
@@ -201,7 +186,7 @@ def ePortageTest(test_type_id, board_sn, test_name):
             # checks if the test was successful
             if successful[i][0] == 1:
                 print('<td align=left> Yes </td>')
-                print("<td align=right style='{ background-color: yellow; }' ><a href='revoke_success.py?test_id=%(id)s'>Revoke</a></td>" %{ "id":test_id[i]})
+                print("<td align=right style='{ background-color: yellow; }' ></td>" %{ "id":test_id[i]})
 
             else:
                 print('<td colspan=2>No</td>')
@@ -334,13 +319,11 @@ def board_info(sn):
     print('</tbody>')
     print('</table>')
 
-    try:
-        print('<h5>Top View:</h5>') 
-        print('<img src="get_image.py?board_id=%s&view=%s" width=900 height=auto>' % (board_id, 'Top'))
-        print('<h5>Bottom View:</h5>')
-        print('<img src="get_image.py?board_id=%s&view=%s" width=900 height=auto>' % (board_id, 'Bottom'))
-    except Exception as e:
-        print('<h6>This board has no images.</h6>')
+    if sn[3:5] == 'TM':
+        print('<h4>Components used:</h4>')
+        cur.execute('select S.barcode from COMPONENT_USAGE U join COMPONENT_STOCK S on U.component_id=S.component_id where U.used_in=%s order by S.barcode' % board_id)
+        for x in cur.fetchall():
+            print(f'<h6>{x[0]}</h6>')
 
 
 def add_board_info(board_id, sn, info, passwd):

@@ -8,7 +8,6 @@ import connect
 
 base_url = connect.get_base_url()
 
-print("Location: summary.py\n\n")
 #cgi header
 print("Content-type: text/html\n")
 
@@ -17,12 +16,13 @@ test_name = html.escape(form.getvalue("test_name"))
 required = base.cleanCGInumber(form.getvalue("required"))
 test_desc_short = html.escape(form.getvalue("test_desc_short"))
 test_desc_long = html.escape(form.getvalue("test_desc_long"))
+order = base.cleanCGInumber(form.getvalue("order"))
 password = html.escape(form.getvalue("password"))
 
 base.header(title='Add New Test Template')
 base.top()
 
 # adds the new test to the database
-test_id=add_test_functions.add_new_test(test_name, required, test_desc_short, test_desc_long, password)
+test_id=add_test_functions.add_new_test(test_name, required, test_desc_short, test_desc_long, password, order)
     
 base.bottom()

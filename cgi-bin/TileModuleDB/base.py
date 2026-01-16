@@ -69,27 +69,16 @@ def top(admin=False):
           <a class="nav-link" href="search.py">Search Tests</a>
         </li>
 ''')
-    # can separate boards by the tests that need to be done for them
-    # this makes the tables with the test results easier to read
-    # this functionality still exists within search_boards.py, filter_boards.py, and makeTestingData.py
-    if False:
-        print('''
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Search Boards
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-            <li><a class="dropdown-item" href="search_boards.py?major_type=LD">Search LD Wagons</a></li>
-            <li><a class="dropdown-item" href="search_boards.py?major_type=HD">Search HD Wagons</a></li>
-            <li><a class="dropdown-item" href="search_boards.py?major_type=ZP">Search Zippers</a></li>
-          </ul>
-        </li>
-''')
-    else:
-        print('''
-        <li class="nav-item">
-          <a class="nav-link" href="search_boards.py">Search Boards</a>
-        </li>
+    print('''
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Search Boards
+      </a>
+      <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+        <li><a class="dropdown-item" href="search_boards.py?major_type=TM">Search Modules</a></li>
+        <li><a class="dropdown-item" href="search_boards.py?major_type=TB">Search PCBs</a></li>
+      </ul>
+    </li>
 ''')
     print('''
         <li class="nav-item">
@@ -97,6 +86,12 @@ def top(admin=False):
         </li>
         <li class="nav-item">
           <a class="nav-link" href="checkout_summary.py">Checkout Summary</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="list_components.py">Components Table</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="add_test.py">Add Test</a>
         </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -117,20 +112,10 @@ def top(admin=False):
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
             <li><a class="dropdown-item" href="board_checkout.py">Board Checkout</a></li>
+            <li><a class="dropdown-item" href="register_boards_form.py">Register Boards</a></li>
             <li><a class="dropdown-item" href="add_tester.py">Add New Tester</a></li>
             <li><a class="dropdown-item" href="add_new_test_template.py">Add New Test Template</a></li>
-          </ul>
-        </li>
-''')
-    print('''
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Plots
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-            <li><a class="dropdown-item" href="testdata.py">Total Tests</a></li>
-            <li><a class="dropdown-item" href="boarddata.py">Board Status</a></li>
-            <li><a class="dropdown-item" href="CompareTesters.py">Compare Testers</a></li>
+            <li><a class="dropdown-item" href="stitch_update.py">Add a test to a Board type</a></li>
           </ul>
         </li>
       </ul>
@@ -165,19 +150,6 @@ def bottom():
       <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
         <h5 class="text-uppercase mb-0">Links</h5>
 
-        <ul class="list-unstyled ms-2">
-          <li>
-            <a href="home_page.py" class="text-light text-decoration-none">Home</a>
-          </li>
-          <li>
-            <span class="text-light">Summary</a>
-            <ul class="list">
-                <li><a class="text-light text-decoration-none" href="summary.py">\tBoard Summary</a></li>
-                <li><a class="text-light text-decoration-none" href="tester_summary.py">\tTester Summary</a></li>
-                <li><a class="text-light text-decoration-none" href="board_images.py">\tPhoto Repository</a></li>
-            </ul>
-          </li>
-        </ul>
       </div>
     </div>
   </div>

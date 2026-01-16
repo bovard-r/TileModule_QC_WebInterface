@@ -54,9 +54,12 @@ if action == "submit2":
 
     cur.execute('select component_id from COMPONENT_STOCK where barcode="%s"' % pcb_barcode)
     comp_id = cur.fetchall()[0][0]
+    cur.execute('select board_id from Board where full_id="%s"' % pcb_barcode)
+    pcb_id = cur.fetchall()[0][0]
     cur.execute("insert into COMPONENT_USAGE (component_id, used_in, used_when) values (%s, %s, NOW())" % (comp_id, board_id))
 
-    cur.execute("insert into Check_Out (board_id, person_id, comment, checkout_date) values (%s, %s, '%s', NOW())" % (board_id, person_id, f"Used in {tq}"))
+    cur.execute("insert into Check_Out (board_id, person_id, comment, checkout_date) values (%s, %s, '%s', NOW())" % (pcb_id, person_id, f"Used in {tq}"))
+    cur.execute("update Board set location='%s' where board_id=%s" % (tq, pcb_id))
 
     for tt, num in tiles.items():
         typecode = mm + "-" + tt

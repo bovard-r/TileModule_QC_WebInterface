@@ -19,8 +19,6 @@ def board_checkout_form_sn(full):
     print("</div>")
     print("</div>")
 
-    print('<input type="hidden" name="webpage" value="True">')
-
     print("<div class='row'>")
     print('<div class = "col-md-3 pt-2 ps-5 mx-2 my-2">')
     print('<label for="sn">Full ID</label>')
@@ -47,13 +45,6 @@ def board_checkout_form_sn(full):
     print('</div>')
 
     print("<div class='row'>")
-    print('<div class = "col-md-3 pt-2 ps-5 mx-2 my-2">')
-    print("<label for='password'>Admin Password</label>")
-    print("<input type='password' name='password'>")
-    print("</div>")
-    print("</div>")
-
-    print("<div class='row'>")
     print('<div class = "col-md-6 pt-2 ps-5 mx-2 my-2">')
     # submits the form on click
     print('<input type="submit" class="btn btn-dark" value="Checkout">')
@@ -69,13 +60,8 @@ def board_checkout(board_id, person_id, comments):
     cur = db.cursor()
    
     try:
-        # gets the check in id for this board
-        cur.execute('select checkin_id from Check_In where board_id=%s' % board_id)
-        checkin_id = cur.fetchall()[0][0]
-        print(checkin_id)
-      
         # checks if the board has already been checked out
-        sql = "SELECT checkin_id, person_id FROM Check_Out WHERE board_id = %s" % board_id
+        sql = "SELECT board_id, person_id FROM Check_Out WHERE board_id = %s" % board_id
         cur.execute(sql)
         checkouts = cur.fetchall()
         if checkouts:
@@ -85,7 +71,7 @@ def board_checkout(board_id, person_id, comments):
 
         else:
             # otherwise, checks the board out
-            sql = "INSERT INTO Check_Out (checkin_id, board_id, person_id, comment, checkout_date) VALUES (%s, %s, %s, '%s', NOW())" % (checkin_id, board_id, person_id, comments)        
+            sql = "INSERT INTO Check_Out (board_id, person_id, comment, checkout_date) VALUES (%s, %s, '%s', NOW())" % (board_id, person_id, comments)        
             cur.execute(sql)
 
             location = comments
@@ -95,13 +81,6 @@ def board_checkout(board_id, person_id, comments):
             
             db.commit()
  
-            cur.execute('select checkin_id from Check_Out where board_id=%s' % board_id)
-            c_id = cur.fetchall()[0][0]
-            # this tells the testing GUI where to look to grab the ID
-            print('Begin')
-            print(c_id)
-            print('End') 
-
     except Exception as e:
         print(e)    
 
