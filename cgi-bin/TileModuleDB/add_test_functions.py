@@ -191,7 +191,10 @@ def add_test(person_id, test_type, barcode, success, comments):
     cur.execute('select test_type from Test_Type where name="%s"' % test_type)
     test_type_id = cur.fetchall()[0][0]
 
-    cur.execute('select type_id from Board_type where type_sn="%s"' % barcode[3:9])
+    if barcode[3:5] == 'TM':
+        cur.execute('select type_id from Board_type where type_sn="%s"' % barcode[3:9])
+    elif barcode[3:5] == 'TB':
+        cur.execute('select type_id from Board_type where type_sn="%s"' % barcode[3:8])
     type_id = cur.fetchall()[0][0]
 
     cur.execute('select test_type_id from Type_test_stitch where type_id=%s' % type_id)
@@ -210,7 +213,6 @@ def add_test(person_id, test_type, barcode, success, comments):
     if barcode:
         cur.execute("SELECT board_id FROM Board WHERE full_id = '{}'".format(barcode))
         row = cur.fetchone()
-        print("The Card_ID=", row[0])
         card_id = row[0]
         
         sql="INSERT INTO Test (person_id, test_type_id, board_id, successful, comments, day) VALUES (%s,%s,%s,%s,%s,NOW())"
@@ -219,7 +221,13 @@ def add_test(person_id, test_type, barcode, success, comments):
         cur.execute(sql,items)
         test_id = cur.lastrowid
 
+        print('<div class ="row">')
+        print('<div class = "col-md-3 pt-4 ps-4 mx-2 my-2">')
+        print('<h3> Test added successfully, test_id:')
         print(test_id)
+        print('</h3>')
+        print('</div>')
+        print('</div>')
 
         db.commit()
             
@@ -263,7 +271,7 @@ def add_tester(person_name, passwd):
         print('</div>')
 
 # adds a new test into Test_Type
-def add_new_test(test_name, required, test_desc_short, test_desc_long, passwd):
+def add_new_test(test_name, required, test_desc_short, test_desc_long, passwd, order):
     try:
         db = connect_admin(passwd)
     except Exception:
@@ -271,11 +279,19 @@ def add_new_test(test_name, required, test_desc_short, test_desc_long, passwd):
     cur = db.cursor()
 
     if test_name and required and test_desc_short and test_desc_long:
-        sql="INSERT INTO Test_Type (name, required, desc_short, desc_long) VALUES ('%s', '%s', '%s', '%s')"%(test_name, required, test_desc_short, test_desc_long)
-        # This is safer because Python takes care of escaping any illegal/invalid text
-        cur.execute(sql)
+        try:
+            sql="INSERT INTO Test_Type (name, required, desc_short, desc_long, relative_order) VALUES ('%s', '%s', '%s', '%s', %s)"%(test_name, required, test_desc_short, test_desc_long, order)
+            # This is safer because Python takes care of escaping any illegal/invalid text
+            cur.execute(sql)
 
-        db.commit()
+            db.commit()
+        except Exception as e:
+            print('<div class ="row">')
+            print('<div class = "col-md-3 pt-4 ps-4 mx-2 my-2">')
+            print(f'<h3> {e} </h3>')
+            print('</div>')
+            print('</div>')
+
 
     else:
         print('<div class ="row">')
@@ -307,11 +323,16 @@ def add_test_template(barcode, suggested_test):
     db = connect(0)
     cur = db.cursor()
 
-    print('<form action="add_test2.py" method="post" enctype="multipart/form-data">')
-    print('<INPUT TYPE="hidden" name="full_id" value="%s">' % (barcode))
+    print('''
+    <form action="add_test2.py" method="post" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter';">
+            ''')
     print('<div class="row">')
     print('<div class="col-md-12 pt-4 ps-5 mx-2 my-2">')
-    print('<h2>Add Test for Board %s</h2>' %barcode)
+    print('<h2>Add Test</h2>')
+
+    print("<label for='full_id'>Barcode</label>")
+    print("<input type='text' name='full_id' value='%s'>" % barcode)
+                                    
     print('</div>')
     print('</div>')
  
@@ -338,15 +359,15 @@ def add_test_template(barcode, suggested_test):
     if suggested_test:
         for test_type in cur:
             if test_type[0] == suggested_test:
-                print('<option value="%s">%s</option>' % (test_type[0], test_type[1]))
+                print('<option value="%s">%s</option>' % (test_type[1], test_type[1]))
                 break
         for test_type in cur:
             if test_type[0] == suggested_test:
                 continue
-            print('<option value="%s">%s</option>' % (test_type[0], test_type[1]))
+            print('<option value="%s">%s</option>' % (test_type[1], test_type[1]))
     else:
         for test_type in cur:
-            print('<option value="%s">%s</option>' % (test_type[0], test_type[1]))
+            print('<option value="%s">%s</option>' % (test_type[1], test_type[1]))
     print('</select>')
     print('</label>')
     print('</div>')
@@ -359,17 +380,10 @@ def add_test_template(barcode, suggested_test):
     print('</label>')
     print('</div>')
     print('<div class="col-md-9 pt-2 ps-5 mx-2 my-2">')
-    print('<label>Comments (Manditory)</label><p>')
+    print('<label>Comments</label><p>')
     print('<textarea rows="5" cols="50" name="comments"></textarea>')
     print('</div>')
     print('</div>')
-
-    print("<div class='row'>")
-    print('<div class = "col-md-3 pt-2 ps-5 mx-2 my-2">')
-    print("<label for='password'>Admin Password</label>")
-    print("<input type='password' name='password'>")
-    print("</div>")
-    print("</div>")
                                     
     print('<div class="row">')
     print('<div class="col-md-6 pt-2 ps-5 mx-2 my-2">')
@@ -406,7 +420,9 @@ def add_test_template(barcode, suggested_test):
 
 # form for adding a new test type
 def add_new_test_template():
-    print('<form action="add_new_test_template2.py" method="post" enctype="multipart/form-data">')
+    print('''
+    <form action="add_new_test_template2.py" method="post" enctype="multipart/form-data">
+            ''')
     print('<div class="row">')
     print('<div class="col-md-12 pt-4 ps-5 mx-2 my-2">')
     print('<h2>Add New Test Template</h2>')
@@ -422,6 +438,13 @@ def add_new_test_template():
     print('<div class="col-md-3 pt-4 ps-5 mx-2 my-2">')
     print('<label>Required</label>')
     print('<INPUT type="checkbox" class="form-check-input" name="required" value="1">')
+    print('</div>')
+    print('</div>')
+
+    print('<div class="row">')
+    print('<div class="col-md-2 pt-4 ps-5 mx-2 my-2">')
+    print('<label>Relative Order</label><p>')
+    print('<INPUT type="text" class="form-control" name="order">')
     print('</div>')
     print('</div>')
 
@@ -492,6 +515,7 @@ def register_boards_form():
     print('<div class="row">')
     print('<div class="col-md-12 pt-4 ps-5 mx-2 my-2">')
     print('<h2>Board Registration</h2>')
+    print('<h5>Takes in a csv with one column of the board barcodes to be registered, no header.</h5>')
     print('</div>')
     print('</div>')
 

@@ -16,7 +16,7 @@ cur=db.cursor()
 
 form = cgi.FieldStorage()
 if form.getvalue('board_id') == 'logo.png':
-    fp = '../../static/files/logo.png'
+    fp = 'logo.png'
 else:
     board_id = base.cleanCGInumber(form.getvalue('board_id'))
     view = form.getvalue('view')

@@ -32,14 +32,10 @@ from datetime import datetime as dt
 import datetime
 import makeTestingData as mTD
 
-#csv_WE, csv_WH, csv_WW, csv_ZP = mTD.get_board_states()
+csv_TB, csv_TM = mTD.get_board_states()
 stitch_types = mTD.get_stitch_types()
-#WE = pd.read_csv(csv_WE, parse_dates=['Check In Time'])
-#WW = pd.read_csv(csv_WW, parse_dates=['Check In Time'])
-#WH = pd.read_csv(csv_WH, parse_dates=['Check In Time'])
-#ZP = pd.read_csv(csv_ZP, parse_dates=['Check In Time'])
-#LD = pd.concat([WE, WW])
-df = pd.read_csv(mTD.get_board_states()[0], parse_dates=['Check In Time'])
+TM = pd.read_csv(csv_TM, parse_dates=['Check In Time'])
+TB = pd.read_csv(csv_TB, parse_dates=['Check In Time'])
 
 filter_code=('''
 const is_selected_map = new Map([
@@ -183,19 +179,12 @@ td.change.emit()
 
 def Filter(major_type):
     # how to split up this page based on boards with different tests
-    if major_type == 'LD':
-        ds = ColumnDataSource(LD)
-        test_types = stitch_types.get('WE10A1', [])
-    elif major_type == 'HD':
-        ds = ColumnDataSource(WH)
-        test_types = stitch_types.get('WH20A0', [])
-    elif major_type == 'ZP':
-        ds = ColumnDataSource(ZP)
-        test_types = stitch_types.get('ZPHSL0', [])
-    # for all the same tests
-    else:
-        ds = ColumnDataSource(df)
-        test_types = list(stitch_types)[0]
+    if major_type == 'TM':
+        ds = ColumnDataSource(TM)
+        test_types = stitch_types.get('TMA5FC', [])
+    elif major_type == 'TB':
+        ds = ColumnDataSource(TB)
+        test_types = stitch_types.get('TBA5F', [])
 
     # create the widgets to be used
     mc_widgets = {}
@@ -327,12 +316,10 @@ def Filter(major_type):
 
     w = [*widgets.values()]
 
-    if major_type == 'HD':
-        layout = row(column(row(w[0:4] + [w[-2], w[-1]]), row(w[4:10]), row(w[10:15]), row(w[15:20]), data_table))
-    elif major_type == 'LD':
-        layout = row(column(row(w[0:4] + [w[-2]]), row(w[4:8] + [w[-1]]), row(w[8:11]), data_table))
-    else:
-        layout = row(column(row(w[0:4] + [w[-2]]), row(w[4:8] + [w[-1]]), data_table))
+    #if major_type == 'TM':
+    layout = row(column(row(w[0:4] + [w[-2], w[-1]]), row(w[4:-2]), data_table))
+    #elif major_type == 'TB':
+    #    layout = row(column(row(w[0:4] + [w[-2], w[-1]]), row(w[4:8] + [w[-1]]), row(w[8:11]), data_table))
 
 
     return json.dumps(json_item(layout))

@@ -10,7 +10,10 @@ import add_test_functions
 print("Content-type: text/html\n")
 
 form = cgi.FieldStorage()
-bc = html.escape(form.getvalue('full_id'))
+try:
+    bc = html.escape(form.getvalue('full_id'))
+except:
+    bc = None
 suggested_test = base.cleanCGInumber(form.getvalue('suggested'))
 
 base.header(title='Add Test')
