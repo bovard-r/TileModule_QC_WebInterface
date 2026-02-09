@@ -142,3 +142,22 @@ CREATE TABLE `Type_test_stitch` (
   KEY `type_id` (`type_id`),
   KEY `test_type_id` (`test_type_id`)
 );
+
+CREATE TABLE COMPONENT_STOCK (
+       component_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+       PRIMARY KEY(component_id),
+       barcode CHAR(16) UNIQUE NOT NULL,
+       typecode CHAR(10) NOT NULL,
+       batch CHAR(10) DEFAULT NULL,
+       alt_barcode CHAR(16) DEFAULT NULL,
+       entered TIMESTAMP       
+       );
+
+CREATE TABLE COMPONENT_USAGE (
+       component_id INT UNSIGNED NOT NULL UNIQUE,
+       FOREIGN KEY (component_id) REFERENCES COMPONENT_STOCK(component_id),
+       used_in_barcode CHAR(16),
+       used_iphi TINYINT DEFAULT NULL,
+       used_ring TINYINT DEFAULT NULL,
+       used_when TIMESTAMP       
+       );
