@@ -144,7 +144,6 @@ def header(of, which):
     th, .ring {
     text-align: center; font-size: xx-large; font-family: sans-serif;
     background-color: #1111ff; color: yellow; 
-    width: 10%;
     }
     .stile {
     background-color: yellow;
@@ -200,17 +199,18 @@ def make_tile_array(cur,of,tmbc):
 
     selects=[]
     bc=[]
+    width=10.0
     for ring in sorted(tile_config[tm].keys(), reverse=True):        
         of.write("<tr><td class=ring><b>%d</b>"%ring)
         iphi=7
         for tile in tile_config[tm][ring]:
             if tile is None:
-                of.write("<td class=missing>")
+                of.write("<td width=%.1f%% class=missing>"%width)
                 continue
             elif isinstance(tile,str):
-                of.write("<td class=stile>%s<br>"%tile)
+                of.write("<td width=%.1f%% class=stile>%s<br>"%(width,tile))
             else:
-                of.write("<td>%s<br>"%tile)
+                of.write("<td width=%.1f%%>%s<br>"%(width,tile))
             name="tile_%02d_%02d"%(iphi,ring)
             of.write('<select name=%s><option value="QC">QC'%name)
             info=tileinfo['TI-%s'%tile]
@@ -223,8 +223,8 @@ def make_tile_array(cur,of,tmbc):
             of.write("<br><input type='text' size=15 name=%s id=%s>\n"%(name,name))
             bc.append(name)
             iphi=iphi-1
-            
-        of.write("</tr>\n")
+        width=width-0.5
+        of.write("<td width=5%%><div width=%.1f%% bgcolor=#ffffff> </div></tr>\n"%(width))
 
     of.write("</table>\n")
     of.write("<p>\n<center><input class=submitter type=submit value='Submit Tile Assignment'></center>\n")
@@ -336,14 +336,63 @@ def commit_selection(cur, of, info):
                      
         query='INSERT INTO COMPONENT_USAGE (component_id, used_in_barcode, used_iphi, used_ring, used_when) VALUES (%d,"%s",%d,%d,NOW())'%(id,making,iphi,ring)            
         cur.execute(query)
-    
-print("Content-type: text/html\n")
+
+def write_xml(of, cur, tbm):
+    of.write('  <PART>\n')
+    of.write('    <KIND_OF_PART></KIND_OF_PART>\n')
+    of.write('    <BARCODE></BARCODE>\n')
+    of.write('    <LOCATION>FNAL</LOCATION>\n')
+    of.write('    <INSTITUTION>FNAL</INSTITUTION>\n')
+    of.write('    <MANUFACTURER>FNAL</MANUFACTURER>\n')
+    of.write('    <NAME_LABEL></NAME_LABEL>\n')
+    of.write('    <PRODUCTION_DATE></PRODUCTION_DATE>\n')
+    of.write('    <BATCH_NUMBER></BATCH_NUMBER>\n')
+    of.write('    <CHILDREN>\n')
+
+    cur.execute("SELECT COMPONENT_STOCK.barcode, COMPONENT_USAGE.used_iphi, COMPONENT_USAGE.used_ring FROM COMPONENT_STOCK INNER JOIN COMPONENT_USAGE ON COMPONENT_STOCK.component_id=COMPONENT_USAGE.component_id WHERE COMPONENT_USAGE.used_in_barcode='%s'"%tbm)
+    for (bc,iphi,ring) in cur:
+        if bc[3:5] not in ('TI','TC'):
+            continue
+        of.write('      <PART>\n')
+        #320TIS5SBN01177 320TI40SBN01859
+        kop='Super-batched Wrapped '
+        if bc[3:5]=='TI':
+            kop+='Molded Tile '
+        else:
+            kop+='Cast Tile '
+        if bc[5]=='S':
+            kop+='Special %s'%bc[6]
+        else:
+            kop+='BH Ring%02d'%int(bc[5:7])
+        of.write('        <KIND_OF_PART>%s</KIND_OF_PART>\n'%kop)
+        of.write('        <SERIAL_NUMBER>%s</SERIAL_NUMBER>\n',bc)
+        of.write('        <PREDEFINED_ATTRIBUTES>\n')
+        of.write('          <ATTRIBUTE><NAME>iring</NAME><VALUE>%d</VALUE></ATTRIBUTE>\n'%ring)
+        of.write('          <ATTRIBUTE><NAME>iphi_local</NAME><VALUE>%d</VALUE></ATTRIBUTE>\n'%iphi)
+        of.write('        </PREDEFINED_ATTRIBUTES>\n')
+        of.write('      </PART>\n')
+    of.write('    </CHILDREN>\n')
+    of.write('  </PART>\n')
 
 db=connect.connect(0)
 cur=db.cursor()
 form=cgi.FieldStorage()
 
 step=form.getvalue('step','start')
+
+if step=='get-xml':
+    module=form.getvalue('barcode')
+    
+    print("Content-type: text/xml\n")
+    print('Content-Disposition: attachment; filename="%s.xml"\n\n'%module)
+
+    # figure out which "TileboardModules"
+    tileboardmodules=[]
+
+    for tbm in tileboardmodules:
+        write_xml(sys.stdout, cur, tbm)
+
+print("Content-type: text/html\n")
 
 if step=='tile_assignment':
     header(sys.stdout, form['step'])

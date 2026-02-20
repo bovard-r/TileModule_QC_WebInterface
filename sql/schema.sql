@@ -7,7 +7,7 @@
 CREATE TABLE `Attachments` (
   `attach_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `test_id` int(11) DEFAULT NULL,
-  `attach` blob DEFAULT NULL,
+  `attach` longblob DEFAULT NULL,
   `attachmime` varchar(30) DEFAULT NULL,
   `attachdesc` varchar(120) DEFAULT NULL,
   `comments` varchar(200) DEFAULT NULL,
