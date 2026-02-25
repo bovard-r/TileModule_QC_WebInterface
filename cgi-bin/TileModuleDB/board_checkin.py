@@ -74,8 +74,10 @@ else:
 
     if major_type == "TQ":
         print('''
-        <form action="board_checkin2.py" method="post" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter';">
+        <form action="get_tiles_used.py" method="get" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter';">
+        <input type="hidden" name="step" value="tile_assignment">
         ''')
+    
     else:
         print('''
         <form action="board_checkin.py" method="post" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter';">

@@ -128,6 +128,8 @@ tile_config={
 }
 
 def header(of, which):
+    of.write("Content-type: text/html\n")
+
     of.write('''
     <html><head>
     <style>
@@ -183,7 +185,7 @@ def pick_tiles(cur, tiletype, batches):
             tiles[batch].append(row[0])
     return tiles
 
-def make_tile_array(cur,of,tmbc):
+def make_tile_array(cur,of,tmbc,tbbc):
     tm=tmbc[5:8]
 
     tileinfo=gather_tile_info(cur)
@@ -192,6 +194,7 @@ def make_tile_array(cur,of,tmbc):
     
     of.write('<form id="tileform" method="GET" action="get_tiles_used.py">\n')
     of.write('<input type=hidden name="barcode" value="%s">\n'%tmbc)
+    of.write('<input type=hidden name="tb_barcode" value="%s">\n'%tbbc)
     of.write('<input type=hidden name="step" value="tile_assignment_verify">\n')
     of.write("<table border=2 width=100%%>\n")
 
@@ -258,6 +261,21 @@ function attachEnableIfSelected(select) {
         of.write("attachEnableIfSelected(form.elements.%s);\n"%(selects[i]))
     of.write("</script>\n")
 
+def check_pcb(cur,pcb_bc,qbc):
+    # check that the PCB BC exists
+    cur.execute("SELECT EXISTS(SELECT 1 FROM Board WHERE full_id='%s')"%(pcb_bc))
+    if cur.fetchone()[0]==0:
+        return (404,"Tile PCB %s does not exist"%pcb_bc)
+    # check that qbc does not exist
+    cur.execute("SELECT EXISTS(SELECT 1 FROM Board WHERE full_id='%s')"%(qbc))
+    if cur.fetchone()[0]==1:
+        return (403,"Protomodule %s already exists!"%qbc)
+    # check that the PCB BC is not used for anything else
+    cur.execute("SELECT EXISTS(SELECT 1 FROM COMPONENT_STOCK INNER JOIN COMPONENT_USAGE on COMPONENT_STOCK.component_id=COMPONENT_USAGE.component_id where barcode='%s' )"%(pcb_bc))
+    if cur.fetchone()[0]==1:
+        return (403,"PCB %s already used for another protomodule already exists!"%pcb_bc)
+    return None
+    
 def verify_selection(cur, of, info):
     byring={}
     bytile={}
@@ -311,13 +329,30 @@ def verify_selection(cur, of, info):
     of.write("</table>")
     of.write('<form id="tileform" method="GET" action="get_tiles_used.py">\n')
     of.write('<input type=hidden name="barcode" value="%s">\n'%info.getvalue("barcode"))
+    of.write('<input type=hidden name="tb_barcode" value="%s">\n'%info.getvalue("tb_barcode"))
     of.write('<input type=hidden name="step" value="tile_assignment_commit">\n')
     for (item,value) in mymemory.items():
         of.write('<input type=hidden name="%s" value="%s">\n'%(item,value))
     of.write("<p>\n<center><input class=submitter type=submit value='Commit Tile Assignment'></center></form>\n")
 
-def commit_selection(cur, of, info):
+def commit_selection(db, of, info):
+    cur=db.cursor()
     making=info.getvalue("barcode")
+    make_from=info.getvalue("tb_barcode")
+
+    # register the tileboard and protomodules as components...
+    cur.execute("INSERT INTO COMPONENT_STOCK (barcode,typecode) VALUES ('%s','%s'),('%s','%s')"%(making,making[3:9],make_from,make_from[3:8]))
+    # insert the protomodule as a board
+    cur.execute("INSERT INTO Board (sn,full_id,type_id,location,manufacturer_id) VALUES ('%s','%s','%s','Fermilab',(SELECT manufacturer_id FROM Manufacturers WHERE name='Fermilab'))"%(making[10:],making,making[3:9]))
+    db.commit()
+    cur.execute("SELECT board_id from Board where full_id='%s'"%making)
+    board_id=int(cur.fetchone()[0])
+    cur.fetchall()
+
+    # link tileboard to protomodule
+    cur.execute("INSERT INTO COMPONENT_USAGE (component_id, used_in, used_in_barcode) VALUES ((SELECT component_id from COMPONENT_STOCK where barcode='%s'),%d,'%s')"%(make_from,board_id,making))
+
+    
     for item in info.keys():
         if item[:4]!='tile':
             continue
@@ -334,9 +369,15 @@ def commit_selection(cur, of, info):
             of.write("Problem with %d %d -> %s"%(iphi,ring,info.getvalue(item)))
             continue
                      
-        query='INSERT INTO COMPONENT_USAGE (component_id, used_in_barcode, used_iphi, used_ring, used_when) VALUES (%d,"%s",%d,%d,NOW())'%(id,making,iphi,ring)            
+        query='INSERT INTO COMPONENT_USAGE (component_id, used_in_barcode, used_iphi, used_ring, used_in) VALUES (%d,"%s",%d,%d,%d)'%(id,making,iphi,ring,board_id)            
         cur.execute(query)
+    db.commit()
+    print("Refresh: 0; url=module.py?full_id=%s\n\n"%(making))
 
+def do_test(bc):
+    print("Refresh: 0; url=home_page.py\n\n")
+
+    
 def write_xml(of, cur, tbm):
     of.write('  <PART>\n')
     of.write('    <KIND_OF_PART></KIND_OF_PART>\n')
@@ -392,20 +433,27 @@ if step=='get-xml':
     for tbm in tileboardmodules:
         write_xml(sys.stdout, cur, tbm)
 
-print("Content-type: text/html\n")
 
 if step=='tile_assignment':
-    header(sys.stdout, form['step'])
-    make_tile_array(cur, sys.stdout,"320TMG5RCF00011")
+    pcb_bc=form.getvalue('pcb_barcode')
+    qbc="320TQ"+pcb_bc[5:8]+form.getvalue('mat')+pcb_bc[8]+pcb_bc[10:15]
+    retval=check_pcb(cur,pcb_bc,qbc)
+    if retval is not None:
+        if retval[0]==404:
+            print("Status: 404 Not Found\n\n")
+        elif retval[0]==403:
+            print("Status: 403 Forbidden\n\n")
+        print("<h1>%s</h1>"%retval[1])
+        exit(1)
+    header(sys.stdout, form.getvalue('step'))
+    make_tile_array(cur, sys.stdout,qbc, pcb_bc)
 elif step=='tile_assignment_verify':
-    header(sys.stdout, form['step'])
+    header(sys.stdout, form.getvalue('step'))
     verify_selection(cur, sys.stdout,form)
+elif step=='test':
+    do_test(form.getvalue('barcode'))
 elif step=='tile_assignment_commit':
     db=connect.connect(1)
-    cur=db.cursor()
-    header(sys.stdout, form['step'])
-    commit_selection(cur, sys.stdout,form)
-    db.commit()
-else:
-    header(sys.stdout, None)    
-    pick_tileboard(sys.stdout)
+#    header(sys.stdout, form.getvalue('step'))
+    commit_selection(db,sys.stdout,form)
+

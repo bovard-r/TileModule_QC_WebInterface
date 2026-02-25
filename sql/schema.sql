@@ -150,14 +150,15 @@ CREATE TABLE COMPONENT_STOCK (
        typecode CHAR(10) NOT NULL,
        batch CHAR(10) DEFAULT NULL,
        alt_barcode CHAR(16) DEFAULT NULL,
-       entered TIMESTAMP       
+       entered TIMESTAMP DEFAULT CURRENT_TIMESTAMP
        );
 
 CREATE TABLE COMPONENT_USAGE (
        component_id INT UNSIGNED NOT NULL UNIQUE,
        FOREIGN KEY (component_id) REFERENCES COMPONENT_STOCK(component_id),
+       used_in INT UNSIGNED NOT NULL,
        used_in_barcode CHAR(16),
        used_iphi TINYINT DEFAULT NULL,
        used_ring TINYINT DEFAULT NULL,
-       used_when TIMESTAMP       
+       used_when TIMESTAMP DEFAULT CURRENT_TIMESTAMP
        );

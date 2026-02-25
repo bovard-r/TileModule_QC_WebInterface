@@ -17,6 +17,7 @@ cur=db.cursor()
 
 GROUPS = OrderedDict({
     "Tile Modules": "TM",
+    "Tile ProtoModules": "TQ",
     "Tile-PCBs": "TB",
     })
 
