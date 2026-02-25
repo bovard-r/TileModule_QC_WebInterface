@@ -51,7 +51,7 @@ CREATE TABLE `Board_images` (
 
 CREATE TABLE `Board_type` (
   `type_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(30) DEFAULT NULL,
+  `name` varchar(50) DEFAULT NULL,
   `type_sn` varchar(6) DEFAULT NULL,
   PRIMARY KEY (`type_id`)
 );
@@ -87,7 +87,7 @@ CREATE TABLE `Check_Out` (
 
 CREATE TABLE `Manufacturers` (
   `manufacturer_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) DEFAULT NULL,
+  `name` varchar(50) DEFAULT NULL UNIQUE,
   PRIMARY KEY (`manufacturer_id`)
 );
 
@@ -97,7 +97,7 @@ CREATE TABLE `Manufacturers` (
 
 CREATE TABLE `People` (
   `person_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `person_name` varchar(100) DEFAULT NULL,
+  `person_name` varchar(100) NOT NULL UNIQUE,
   PRIMARY KEY (`person_id`)
 );
 
