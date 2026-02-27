@@ -339,11 +339,12 @@ def commit_selection(db, of, info):
     cur=db.cursor()
     making=info.getvalue("barcode")
     make_from=info.getvalue("tb_barcode")
+    sys.stderr.write('commit_selection %s %s\n'%(making,make_from))
 
-    # register the tileboard and protomodules as components...
-    cur.execute("INSERT INTO COMPONENT_STOCK (barcode,typecode) VALUES ('%s','%s'),('%s','%s')"%(making,making[3:9],make_from,make_from[3:8]))
     # insert the protomodule as a board
     cur.execute("INSERT INTO Board (sn,full_id,type_id,location,manufacturer_id) VALUES ('%s','%s','%s','Fermilab',(SELECT manufacturer_id FROM Manufacturers WHERE name='Fermilab'))"%(making[10:],making,making[3:9]))
+    # register the protomodule as a component...
+    cur.execute("INSERT INTO COMPONENT_STOCK (barcode,typecode) VALUES ('%s','%s')"%(making,making[3:9]))
     db.commit()
     cur.execute("SELECT board_id from Board where full_id='%s'"%making)
     board_id=int(cur.fetchone()[0])
