@@ -5,6 +5,7 @@ from collections import Counter
 
 # Yes CGI is deprecated, but that's how things are
 import cgi
+import cgitb
 import html
 
 tile_config={
@@ -128,7 +129,7 @@ tile_config={
 }
 
 def header(of, which):
-    of.write("Content-type: text/html\n")
+    of.write("Content-type: text/html\n\n")
 
     of.write('''
     <html><head>
@@ -339,7 +340,6 @@ def commit_selection(db, of, info):
     cur=db.cursor()
     making=info.getvalue("barcode")
     make_from=info.getvalue("tb_barcode")
-    sys.stderr.write('commit_selection %s %s\n'%(making,make_from))
 
     # insert the protomodule as a board
     cur.execute("INSERT INTO Board (sn,full_id,type_id,location,manufacturer_id) VALUES ('%s','%s','%s','Fermilab',(SELECT manufacturer_id FROM Manufacturers WHERE name='Fermilab'))"%(making[10:],making,making[3:9]))
@@ -352,7 +352,6 @@ def commit_selection(db, of, info):
 
     # link tileboard to protomodule
     cur.execute("INSERT INTO COMPONENT_USAGE (component_id, used_in, used_in_barcode) VALUES ((SELECT component_id from COMPONENT_STOCK where barcode='%s'),%d,'%s')"%(make_from,board_id,making))
-
     
     for item in info.keys():
         if item[:4]!='tile':
@@ -380,38 +379,51 @@ def do_test(bc):
 
     
 def write_xml(of, cur, tbm):
+
+    cur.execute('SELECT name,kind_of_part from Board_type where type_sn=(SELECT type_id from Board where full_id="%s")'%tbm)
+    (basename,kop)=cur.fetchone()
+
+    cur.execute('SELECT used_when from COMPONENT_USAGE WHERE used_in_barcode="%s" and used_ring is NULL'%tbm)
+    (when)=cur.fetchone()[0]
+    
     of.write('  <PART>\n')
-    of.write('    <KIND_OF_PART></KIND_OF_PART>\n')
-    of.write('    <BARCODE></BARCODE>\n')
+    of.write('    <KIND_OF_PART>%s</KIND_OF_PART>\n'%(kop))
+    of.write('    <BARCODE>%s</BARCODE>\n'%tbm)
     of.write('    <LOCATION>FNAL</LOCATION>\n')
     of.write('    <INSTITUTION>FNAL</INSTITUTION>\n')
     of.write('    <MANUFACTURER>FNAL</MANUFACTURER>\n')
-    of.write('    <NAME_LABEL></NAME_LABEL>\n')
-    of.write('    <PRODUCTION_DATE></PRODUCTION_DATE>\n')
-    of.write('    <BATCH_NUMBER></BATCH_NUMBER>\n')
+    of.write('    <NAME_LABEL>%s %s</NAME_LABEL>\n'%(basename,tbm))
+    of.write('    <PRODUCTION_DATE>%s</PRODUCTION_DATE>\n'%(when.strftime("%Y-%m-%d")))
+    batch=tbm[11]
+    of.write('    <BATCH_NUMBER>%s</BATCH_NUMBER>\n'%batch)
     of.write('    <CHILDREN>\n')
 
     cur.execute("SELECT COMPONENT_STOCK.barcode, COMPONENT_USAGE.used_iphi, COMPONENT_USAGE.used_ring FROM COMPONENT_STOCK INNER JOIN COMPONENT_USAGE ON COMPONENT_STOCK.component_id=COMPONENT_USAGE.component_id WHERE COMPONENT_USAGE.used_in_barcode='%s'"%tbm)
     for (bc,iphi,ring) in cur:
-        if bc[3:5] not in ('TI','TC'):
+        if bc[3:5] not in ('TI','TC','TB'):
             continue
         of.write('      <PART>\n')
         #320TIS5SBN01177 320TI40SBN01859
-        kop='Super-batched Wrapped '
-        if bc[3:5]=='TI':
-            kop+='Molded Tile '
+        if bc[3:5]=='TB':
+            cur.execute('SELECT kind_of_part from Board_type where type_sn=(SELECT type_id from Board where full_id="%s")'%bc)
+            (kop,)=cur.fetchone()            
         else:
-            kop+='Cast Tile '
-        if bc[5]=='S':
-            kop+='Special %s'%bc[6]
-        else:
-            kop+='BH Ring%02d'%int(bc[5:7])
+            kop='Super-batched Wrapped '
+            if bc[3:5]=='TI':
+                kop+='Molded Tile '
+            else:
+                kop+='Cast Tile '
+            if bc[5]=='S':
+                kop+='Special %s'%bc[6]
+            else:
+                kop+='BH Ring%02d'%int(bc[5:7])
         of.write('        <KIND_OF_PART>%s</KIND_OF_PART>\n'%kop)
-        of.write('        <SERIAL_NUMBER>%s</SERIAL_NUMBER>\n',bc)
-        of.write('        <PREDEFINED_ATTRIBUTES>\n')
-        of.write('          <ATTRIBUTE><NAME>iring</NAME><VALUE>%d</VALUE></ATTRIBUTE>\n'%ring)
-        of.write('          <ATTRIBUTE><NAME>iphi_local</NAME><VALUE>%d</VALUE></ATTRIBUTE>\n'%iphi)
-        of.write('        </PREDEFINED_ATTRIBUTES>\n')
+        of.write('        <SERIAL_NUMBER>%s</SERIAL_NUMBER>\n'%bc)
+        if bc[3:5]!='TB':
+            of.write('        <PREDEFINED_ATTRIBUTES>\n')
+            of.write('          <ATTRIBUTE><NAME>iring</NAME><VALUE>%d</VALUE></ATTRIBUTE>\n'%ring)
+            of.write('          <ATTRIBUTE><NAME>iphi_local</NAME><VALUE>%d</VALUE></ATTRIBUTE>\n'%iphi)
+            of.write('        </PREDEFINED_ATTRIBUTES>\n')
         of.write('      </PART>\n')
     of.write('    </CHILDREN>\n')
     of.write('  </PART>\n')
@@ -428,11 +440,7 @@ if step=='get-xml':
     print("Content-type: text/xml\n")
     print('Content-Disposition: attachment; filename="%s.xml"\n\n'%module)
 
-    # figure out which "TileboardModules"
-    tileboardmodules=[]
-
-    for tbm in tileboardmodules:
-        write_xml(sys.stdout, cur, tbm)
+    write_xml(sys.stdout, cur, module)
 
 
 if step=='tile_assignment':
@@ -454,6 +462,12 @@ elif step=='tile_assignment_verify':
 elif step=='test':
     do_test(form.getvalue('barcode'))
 elif step=='tile_assignment_commit':
+
+    
+#    print("Content-type: text/html\n")
+#    cgitb.enable()
+
+
     db=connect.connect(1)
 #    header(sys.stdout, form.getvalue('step'))
     commit_selection(db,sys.stdout,form)
