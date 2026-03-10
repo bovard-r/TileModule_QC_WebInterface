@@ -321,8 +321,14 @@ def board_info(sn):
     if "TQ" in sn[3:5]:
         cur.execute('select entered from COMPONENT_STOCK where barcode="%s"' % sn)
         r_date = cur.fetchall()[0][0]
-    else:
+    elif "TB" in sn[3:5]:
         cur.execute('select checkin_date from Check_In where board_id=%s' % board_id)
+        try:
+            r_date = cur.fetchall()[0][0]
+        except:
+            r_date = None
+    else:
+        cur.execute('select used_when from COMPONENT_USAGE where used_in_barcode="%s"' % sn)
         try:
             r_date = cur.fetchall()[0][0]
         except:
