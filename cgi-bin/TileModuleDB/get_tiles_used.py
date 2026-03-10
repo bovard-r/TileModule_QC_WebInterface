@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!./cgi_runner.sh
 import sys
 import connect
 from collections import Counter
@@ -7,6 +7,7 @@ from collections import Counter
 import cgi
 import cgitb
 import html
+import base
 
 tile_config={
     'D8F' : {
@@ -129,7 +130,9 @@ tile_config={
 }
 
 def header(of, which):
-    of.write("Content-type: text/html\n\n")
+    print("Content-type: text/html\n")
+
+    base.header("Tile Assignment")
 
     of.write('''
     <html><head>
@@ -187,6 +190,8 @@ def pick_tiles(cur, tiletype, batches):
     return tiles
 
 def make_tile_array(cur,of,tmbc,tbbc):
+    base.top()
+
     tm=tmbc[5:8]
 
     tileinfo=gather_tile_info(cur)
@@ -262,11 +267,13 @@ function attachEnableIfSelected(select) {
         of.write("attachEnableIfSelected(form.elements.%s);\n"%(selects[i]))
     of.write("</script>\n")
 
+    base.bottom()
+
 def check_pcb(cur,pcb_bc,qbc):
     # check that the PCB BC exists
     cur.execute("SELECT EXISTS(SELECT 1 FROM Board WHERE full_id='%s')"%(pcb_bc))
     if cur.fetchone()[0]==0:
-        return (404,"Tile PCB %s does not exist"%pcb_bc)
+        return (404,"Tile PCB %s does not exist!"%pcb_bc)
     # check that qbc does not exist
     cur.execute("SELECT EXISTS(SELECT 1 FROM Board WHERE full_id='%s')"%(qbc))
     if cur.fetchone()[0]==1:
@@ -275,9 +282,59 @@ def check_pcb(cur,pcb_bc,qbc):
     cur.execute("SELECT EXISTS(SELECT 1 FROM COMPONENT_STOCK INNER JOIN COMPONENT_USAGE on COMPONENT_STOCK.component_id=COMPONENT_USAGE.component_id where barcode='%s' )"%(pcb_bc))
     if cur.fetchone()[0]==1:
         return (403,"PCB %s already used for another protomodule already exists!"%pcb_bc)
+    # check that the PCB has passed QC Tests
+    cur.execute('''
+        select board_id
+        from Board
+        where full_id="%s"
+    ''' % pcb_bc)
+    board_id = cur.fetchall()[0][0]
+
+    cur.execute('''
+        select T.board_id, T.test_type_id, T.successful
+        from Test T
+        join (
+            select board_id, test_type_id, MAX(test_id) as latest_test_id
+            from Test
+            group by board_id, test_type_id
+        ) latest on T.test_id = latest.latest_test_id
+        where T.board_id=%s
+    ''' % board_id)
+
+    test_results = {}
+    for board_id, test_type_id, successful in cur.fetchall():
+        test_results.setdefault(board_id, {})[test_type_id] = successful
+
+    cur.execute('''
+        select BT.type_sn, TT.test_type, TT.name
+        from Type_test_stitch TTS
+        join Test_Type TT on TTS.test_type_id = TT.test_type
+        join Board_type BT on BT.type_id = TTS.type_id
+    ''')
+    stitch_types_by_subtype = {}
+    for type_id, test_type_id, test_name in cur.fetchall():
+        stitch_types_by_subtype.setdefault(type_id, []).append((test_type_id, test_name))
+
+    stitch_types = stitch_types_by_subtype.get(pcb_bc[3:8], [])
+
+    failed = {}
+    outcomes = {}
+    for test_type_id, test_name in stitch_types:
+        result = test_results.get(board_id, {}).get(test_type_id)
+        outcomes[test_name] = result == 1 or result == '1'
+        failed[test_name] = result == 0
+
+    num_tests_passed = sum(outcomes.values())
+    num_tests_req = len(outcomes)
+    num_tests_failed = sum(failed.values())
+
+    if num_tests_passed != num_tests_req:
+        return (403,"PCB has not passed the required QC tests!")
+
     return None
     
 def verify_selection(cur, of, info):
+    base.top()
     byring={}
     bytile={}
     assigned={}
@@ -335,6 +392,7 @@ def verify_selection(cur, of, info):
     for (item,value) in mymemory.items():
         of.write('<input type=hidden name="%s" value="%s">\n'%(item,value))
     of.write("<p>\n<center><input class=submitter type=submit value='Commit Tile Assignment'></center></form>\n")
+    base.bottom()
 
 def commit_selection(db, of, info):
     cur=db.cursor()

@@ -119,16 +119,12 @@ def add_test_tab(barcode, board_id):
     print('<button class="btn btn-dark"> Add a New Test </button>')
     print('</a>')
     print('</div>')
-    print('<div class="col-md-2 ps-5 pt-2 my-2">')
-    print('<a href="add_board_info.py?board_id=%(id)d&full_id=%(full_id)s">' %{'full_id':barcode, 'id':board_id})
-    print('<button class="btn btn-dark"> Add Board Info </button>')
-    print('</a>')
-    print('</div>')
-    print('<div class="col-md-2 ps-5 pt-2 my-2">')
-    print('<a href="board_checkout.py?full_id=%(full_id)s">' %{'full_id':barcode})
-    print('<button class="btn btn-dark"> Mark as shipped </button>')
-    print('</a>')
-    print('</div>')
+    if 'TM' in barcode[3:5]:
+        print('<div class="col-md-2 ps-5 pt-2 my-2">')
+        print('<a href="board_checkout.py?full_id=%(full_id)s">' %{'full_id':barcode})
+        print('<button class="btn btn-dark"> Mark as shipped </button>')
+        print('</a>')
+        print('</div>')
     print('</div>')
 
 
@@ -253,15 +249,16 @@ def board_info(sn):
 
     registered_name = 'Registered'
 
-    cur.execute('select successful from Test where board_id=%s and test_type_id in (select test_type from Test_Type where name="%s")' % (board_id, registered_name))
-    registered = cur.fetchall()
-    if registered:
-        if registered[0][0] == 1:
-            registered = '<td colspan=1><span class="badge bg-success rounded-pill">Done</span></td>'
+    if "TM" in sn[3:5]:
+        cur.execute('select successful from Test where board_id=%s and test_type_id in (select test_type from Test_Type where name="%s")' % (board_id, registered_name))
+        registered = cur.fetchall()
+        if registered:
+            if registered[0][0] == 1:
+                registered = '<td colspan=1><span class="badge bg-success rounded-pill">Done</span></td>'
+            else:
+                registered = '<td class="bg-danger">&nbsp</td>'
         else:
-            registered = '<td class="bg-danger">&nbsp</td>'
-    else:
-        registered = '<td>Board has not been registered.</td>'
+            registered = '<td>Board has not been registered.</td>'
 
     # determine how many tests have passed
     cur.execute('select type_id from Board where board_id=%s' % board_id)
@@ -294,7 +291,8 @@ def board_info(sn):
     print('<tr>')
     print('<th colspan=2>Location</th>')
     print('<th colspan=1>Testing Status</th>')
-    print('<th colspan=1>Registered?</th>')
+    if "TM" in sn[3:5]:
+        print('<th colspan=1>Registered?</th>')
     print('</tr>')
     print('<tr>')
     print('<td colspan=2>%s</td>' % location)
@@ -302,23 +300,33 @@ def board_info(sn):
         print('<td colspan=1><span class="badge bg-success rounded-pill">Done</span></td>')
     else:
         print('<td colspan=1><span class="badge bg-dark rounded-pill">%(success)s/%(total)s</span></td>' %{'success': num, 'total': total})
-    print(registered)
+    if "TM" in sn[3:5]:
+        print(registered)
         
     print('</tr>')
     print('<tr>')
     print('<th colspan=1>Comments</th>')
-    print('<th colspan=1>Date Received</th>')
+    if "TB" in sn[3:5]:
+        print('<th colspan=1>Date Received</th>')
+    else:
+        print('<th colspan=1>Date Created</th>')
     print('<th colspan=1>Manufacturer</th>')
-    print('<th colspan=1>Date Shipped</th>')
+    if "TM" in sn[3:5]:
+        print('<th colspan=1>Date Shipped</th>')
     print('</tr>')
     print('<tr>')
     print('<td colspan=1>%s</td>' % info_com)
     # gets check in date
-    cur.execute('select checkin_date from Check_In where board_id=%s' % board_id)
-    try:
+
+    if "TQ" in sn[3:5]:
+        cur.execute('select entered from COMPONENT_STOCK where barcode="%s"' % sn)
         r_date = cur.fetchall()[0][0]
-    except:
-        r_date = None
+    else:
+        cur.execute('select checkin_date from Check_In where board_id=%s' % board_id)
+        try:
+            r_date = cur.fetchall()[0][0]
+        except:
+            r_date = None
     if r_date:
         print('<td colspan=1>%s</td>' % r_date)
     else:
@@ -331,12 +339,13 @@ def board_info(sn):
     print('<td colspan=1>%s</td>' % manufacturer)
         
     # if the board has been checked out, get the check out data
-    try:
-        cur.execute('select checkout_date,comment from Check_Out where board_id=%s' % board_id)
-        checkout = cur.fetchall()[0]
-        print('<td>%s</td>' % checkout[0])
-    except:
-        print('<td colspan=1> Board has not been shipped. </td>')
+    if "TM" in sn[3:5]:
+        try:
+            cur.execute('select checkout_date,comment from Check_Out where board_id=%s' % board_id)
+            checkout = cur.fetchall()[0]
+            print('<td>%s</td>' % checkout[0])
+        except:
+            print('<td colspan=1> Board has not been shipped. </td>')
         
     print('</tr>')
     print('</tbody>')
@@ -346,7 +355,7 @@ def board_info(sn):
         print('<h4>Components used:</h4>')
         cur.execute('select S.barcode from COMPONENT_USAGE U join COMPONENT_STOCK S on U.component_id=S.component_id where U.used_in=%s order by S.barcode' % board_id)
         for x in cur.fetchall():
-            print(f'<h6>{x[0]}</h6>')
+            print(f'<h6><a href="module.py?full_id={x[0]}">{x[0]}</a></h6>')
 
 
 def add_board_info(board_id, sn, info, passwd):
