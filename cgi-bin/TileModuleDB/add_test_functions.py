@@ -191,7 +191,7 @@ def add_test(person_id, test_type, barcode, success, comments):
     cur.execute('select test_type from Test_Type where name="%s"' % test_type)
     test_type_id = cur.fetchall()[0][0]
 
-    if barcode[3:5] == 'TM':
+    if barcode[3:5] == 'TM' or barcode[3:5] == 'TQ':
         cur.execute('select type_id from Board_type where type_sn="%s"' % barcode[3:9])
     elif barcode[3:5] == 'TB':
         cur.execute('select type_id from Board_type where type_sn="%s"' % barcode[3:8])
