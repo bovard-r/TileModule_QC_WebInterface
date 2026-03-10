@@ -48,18 +48,18 @@ if action == "submit":
 
                 type_id = module[3:9]
 
-                add_module(module, "Fermilab", "Fermilab")
+                cur.execute('update Board set sn="%s", full_id="%s", type_id="%s" where full_id="%s"' % (sn, module, type_id, tq))
                 db.commit()
+                cur.execute('update COMPONENT_USAGE set used_in_barcode="%s" where used_in=(SELECT board_id FROM Board where full_id="%s")' % module)
 
-                cur.execute('select board_id from Board where full_id="%s"' % module)
-                board_id = cur.fetchall()[0][0]
-
-                board_check_functions.board_checkin(board_id, person_id, comments)
-
-                cur.execute('insert into COMPONENT_USAGE (component_id, used_in, used_in_barcode) values ((select component_id from COMPONENT_STOCK where barcode="%s"), %s, "%s")' % (tq, board_id, module))
-
-                #cur.execute(f'insert into COMPONENT_STOCK (barcode, typecode, entered) values ("{module}", "{module[3:5] + "-" + module[5:8]}", NOW())')
-                db.commit()
+                cur.execute("select * from Board where full_id='%s'" % module)
+                rows = cur.fetchall()
+                if rows:
+                    cur.execute('select board_id from Board where full_id="%s"' % pcb_barcode)
+                    pcb_id = cur.fetchall()[0][0]
+                    cur.execute("update Board set location='%s' where board_id=%s" % (module, pcb_id))
+                    cur.execute('update Check_Out set comment="%s" where board_id=%s' % (f"Used in {module}", pcb_id))
+                    db.commit()
 
             else:
                 print("Error: no protomodule associated with this pcb and tile type")
