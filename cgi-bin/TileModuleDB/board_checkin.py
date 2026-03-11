@@ -50,7 +50,7 @@ if action == "submit":
 
                 cur.execute('update Board set sn="%s", full_id="%s", type_id="%s" where full_id="%s"' % (sn, module, type_id, tq))
                 db.commit()
-                cur.execute('update COMPONENT_USAGE set used_in_barcode="%s" where used_in=(SELECT board_id FROM Board where full_id="%s")' % (module, tq))
+                cur.execute('update COMPONENT_USAGE set used_in_barcode="%s" where used_in=(SELECT board_id FROM Board where full_id="%s")' % (module, module))
 
                 cur.execute("select * from Board where full_id='%s'" % module)
                 rows = cur.fetchall()
