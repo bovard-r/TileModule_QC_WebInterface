@@ -448,7 +448,7 @@ def write_xml(of, cur, tbm):
     of.write('    <KIND_OF_PART>%s</KIND_OF_PART>\n'%(kop))
     of.write('    <BARCODE>%s</BARCODE>\n'%tbm)
     of.write('    <LOCATION>FNAL</LOCATION>\n')
-    of.write('    <INSTITUTION>FNAL</INSTITUTION>\n')
+    of.write('    <INSTITUTION>Fermi National Accelerator Lab.</INSTITUTION>\n')
     of.write('    <MANUFACTURER>FNAL</MANUFACTURER>\n')
     of.write('    <NAME_LABEL>%s %s</NAME_LABEL>\n'%(basename,tbm))
     of.write('    <PRODUCTION_DATE>%s</PRODUCTION_DATE>\n'%(when.strftime("%Y-%m-%d")))
@@ -456,8 +456,10 @@ def write_xml(of, cur, tbm):
     of.write('    <BATCH_NUMBER>%s</BATCH_NUMBER>\n'%batch)
     of.write('    <CHILDREN>\n')
 
-    cur.execute("SELECT COMPONENT_STOCK.barcode, COMPONENT_USAGE.used_iphi, COMPONENT_USAGE.used_ring FROM COMPONENT_STOCK INNER JOIN COMPONENT_USAGE ON COMPONENT_STOCK.component_id=COMPONENT_USAGE.component_id WHERE COMPONENT_USAGE.used_in_barcode='%s'"%tbm)
-    for (bc,iphi,ring) in cur:
+    cur.execute("SELECT COMPONENT_STOCK.barcode, COMPONENT_USAGE.used_iphi, COMPONENT_USAGE.used_ring, COMPONENT_STOCK.alt_barcode FROM COMPONENT_STOCK INNER JOIN COMPONENT_USAGE ON COMPONENT_STOCK.component_id=COMPONENT_USAGE.component_id WHERE COMPONENT_USAGE.used_in_barcode='%s'"%tbm)
+    for (bc,iphi,ring,abc) in cur:
+        if abc is not None:
+            bc=abc
         if bc[3:5] not in ('TI','TC','TB'):
             continue
         of.write('      <PART>\n')
@@ -495,11 +497,12 @@ step=form.getvalue('step','start')
 if step=='get-xml':
     module=form.getvalue('barcode')
     
-    print("Content-type: text/xml\n")
-    print('Content-Disposition: attachment; filename="%s.xml"\n\n'%module)
+    print("Content-type: text/xml")
+    print('Content-Disposition: attachment; filename="%s.xml"\n'%module)
 
+    print("<ROOT>\n<PARTS>")
     write_xml(sys.stdout, cur, module)
-
+    print("</PARTS>\n</ROOT>")
 
 if step=='tile_assignment':
     pcb_bc=form.getvalue('pcb_barcode')

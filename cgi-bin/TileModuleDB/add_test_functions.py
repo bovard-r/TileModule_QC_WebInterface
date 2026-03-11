@@ -5,6 +5,7 @@ import cgi, os
 import cgitb; cgitb.enable()
 import settings
 import json
+import zipfile
 
 
 # a lot of these functions are used for the GUI
@@ -304,19 +305,51 @@ def add_new_test(test_name, required, test_desc_short, test_desc_long, passwd, o
 # adds attachment, called after test has been added
 def add_test_attachment(test_id, afile, desc, comments):
     print("Adding attachment...")
+    
     if afile.filename:
+        # 1. Check if the file is JSON or ZIP based on extension
+        originalname = os.path.basename(afile.filename)
+        extension = originalname.lower().split('.')[-1]
+
+        if extension not in ['json', 'zip']:
+            print(f"Error: .{extension} files are not supported. Please upload .json or .zip.")
+            return
+
         db = connect(1)
         cur = db.cursor()
-        originalname = os.path.basename(afile.name)
 
-        # decodes file
-        f = afile.file.read().decode('utf-8')
+        # 2. Read as raw bytes
+        # Crucial: Removing .decode('utf-8') allows ZIP files to stay valid
+        f_data = afile.file.read() 
 
-        cur.execute("INSERT INTO Attachments (test_id,attach,attachmime,attachdesc,comments,originalname) VALUES (%s,%s,%s,%s,%s,%s)",
-                    (test_id,f,afile.type,desc,comments,originalname));
-        att_id=cur.lastrowid
+        # 3. Insert including the MIME type (afile.type)
+        # This tells the database if it's 'application/json' or 'application/zip'
+        query = """
+            INSERT INTO Attachments 
+            (test_id, attach, attachmime, attachdesc, comments, originalname) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        
+        cur.execute(query, (test_id, f_data, afile.type, desc, comments, originalname))
+        
         db.commit()
-        print('<div> The file %s was uploaded successfully. </div>' % (originalname))
+        print('<div> The %s file "%s" was uploaded successfully. </div>' % (extension.upper(), originalname))
+# # adds attachment, called after test has been added
+# def add_test_attachment(test_id, afile, desc, comments):
+#     print("Adding attachment...")
+#     if afile.filename:
+#         db = connect(1)
+#         cur = db.cursor()
+#         originalname = os.path.basename(afile.name)
+
+#         # decodes file
+#         f = afile.file.read().decode('utf-8') 
+
+#         cur.execute("INSERT INTO Attachments (test_id,attach,attachmime,attachdesc,comments,originalname) VALUES (%s,%s,%s,%s,%s,%s)",
+#                     (test_id,f,afile.type,desc,comments,originalname));
+#         att_id=cur.lastrowid
+#         db.commit()
+#         print('<div> The file %s was uploaded successfully. </div>' % (originalname))
     
 # creates page to add a new test
 def add_test_template(barcode, suggested_test):
