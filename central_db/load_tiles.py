@@ -12,11 +12,16 @@ def get_all_tiles(cur):
     all_tiles=set()
     for row in cur:
         all_tiles.add(row[0])
+    cur.execute("SELECT barcode FROM COMPONENT_STOCK WHERE typecode LIKE 'TC-%'")
+    all_tiles=set()
+    for row in cur:
+        all_tiles.add(row[0])
     return all_tiles
 
 def load_tiles(filename, all_tiles,cur):
     basequery="INSERT INTO COMPONENT_STOCK (barcode, typecode, batch, alt_barcode) VALUES "
     irow=0
+    added=0
     col={}
     with open(filename,"r") as f:
         query = basequery
@@ -44,6 +49,7 @@ def load_tiles(filename, all_tiles,cur):
             query=query[:-2]
 #            print(query)
             cur.execute(query)
+    print("Added %d tiles to the database"%(irow-1))
             
 parser = argparse.ArgumentParser()
 parser.add_argument('csv',help='path to the input csv file')
@@ -51,6 +57,6 @@ parser.add_argument('csv',help='path to the input csv file')
 args = parser.parse_args()
 
 all_cur_tiles=get_all_tiles(cur)
-print(all_cur_tiles)
+#print(all_cur_tiles)
 load_tiles(args.csv, all_cur_tiles, cur)
 db.commit()
