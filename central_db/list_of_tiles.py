@@ -69,7 +69,7 @@ if (__name__ == "__main__"):
                     f.write("%s,%s,\n"%(tile,nonqc_tiles[tile]))
 
         if (args.mt=='TC'):
-            for ring in ('06','08',10,12,14,16, 18, 20, 22, 24, 'S3', 'S4', 34, 36, 38, 40, 'S5', 'S6'):
+            for ring in ('06','08',10,12,14,16, 18, 20, 22, 24,'S2','S3', 'S4', 34, 36, 38, 40, 'S5', 'S6'):
                 pref="%s-%s"%(args.mt,ring)
                 qc_tiles=get_qc_tiles(cursor,kops,pref+"SB",pref+"QC",locid)
                 nonqc_tiles=get_nonqc_tiles(cursor,kops,pref+"SB",pref+"QC",locid)
