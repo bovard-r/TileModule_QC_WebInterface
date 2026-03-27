@@ -121,6 +121,12 @@ def add_test_tab(barcode, board_id):
     print('</div>')
     if 'TM' in barcode[3:5]:
         print('<div class="col-md-2 ps-5 pt-2 my-2">')
+        print('<a href="get_tiles_used.py?step=get-xml&barcode=%(full_id)s">' %{'full_id':barcode})
+        print('<button class="btn btn-dark"> Get XML </button>')
+        print('</a>')
+        print('</div>')
+
+        print('<div class="col-md-2 ps-5 pt-2 my-2">')
         print('<a href="board_checkout.py?full_id=%(full_id)s">' %{'full_id':barcode})
         print('<button class="btn btn-dark"> Mark as shipped </button>')
         print('</a>')
