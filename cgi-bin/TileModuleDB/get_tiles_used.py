@@ -189,7 +189,7 @@ def pick_tiles(cur, tiletype, batches):
             tiles[batch].append(row[0])
     return tiles
 
-def make_tile_array(cur,of,tmbc,tbbc):
+def make_tile_array(cur,of,tmbc,tbbc,mat):
     base.top()
 
     tm=tmbc[5:8]
@@ -213,16 +213,19 @@ def make_tile_array(cur,of,tmbc,tbbc):
         of.write("<tr><td class=ring><b>%d</b>"%ring)
         iphi=7
         for tile in tile_config[tm][ring]:
+            tilestr=None
             if tile is None:
                 of.write("<td width=%.1f%% class=missing>"%width)
                 continue
             elif isinstance(tile,str):
                 of.write("<td width=%.1f%% class=stile>%s<br>"%(width,tile))
+                tilestr=tile
             else:
                 of.write("<td width=%.1f%%>%s<br>"%(width,tile))
+                tilestr="%02d"%(tile)
             name="tile_%02d_%02d"%(iphi,ring)
             of.write('<select name=%s><option value="QC">QC'%name)
-            info=tileinfo['TI-%s'%tile]
+            info=tileinfo['T%s-%s'%(mat,tilestr)]
             maxbatchn=max(info, key=info.get)
             for sb in info:
                 of.write('<option value="SB%s" %s>SB%s'%(sb,"selected" if sb==maxbatchn else "",sb))
@@ -517,7 +520,7 @@ if step=='tile_assignment':
         print("<h1>%s</h1>"%retval[1])
         exit(1)
     header(sys.stdout, form.getvalue('step'))
-    make_tile_array(cur, sys.stdout,qbc, pcb_bc)
+    make_tile_array(cur, sys.stdout,qbc, pcb_bc, form.getvalue('mat'))
 elif step=='tile_assignment_verify':
     header(sys.stdout, form.getvalue('step'))
     verify_selection(cur, sys.stdout,form)
