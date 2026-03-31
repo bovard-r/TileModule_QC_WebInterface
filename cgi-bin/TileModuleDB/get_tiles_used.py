@@ -447,6 +447,7 @@ def write_xml(of, cur, tbm):
     of.write('  <PART>\n')
     of.write('    <KIND_OF_PART>%s</KIND_OF_PART>\n'%(kop))
     of.write('    <BARCODE>%s</BARCODE>\n'%tbm)
+    of.write('    <SERIAL_NUMBER>%s</SERIAL_NUMBER>\n'%tbm)
     of.write('    <LOCATION>FNAL</LOCATION>\n')
     of.write('    <INSTITUTION>Fermi National Accelerator Lab.</INSTITUTION>\n')
     of.write('    <MANUFACTURER>FNAL</MANUFACTURER>\n')
@@ -523,12 +524,8 @@ elif step=='tile_assignment_verify':
 elif step=='test':
     do_test(form.getvalue('barcode'))
 elif step=='tile_assignment_commit':
-
-    
 #    print("Content-type: text/html\n")
 #    cgitb.enable()
-
-
     db=connect.connect(1)
 #    header(sys.stdout, form.getvalue('step'))
     commit_selection(db,sys.stdout,form)
