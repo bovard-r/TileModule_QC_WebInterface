@@ -123,7 +123,7 @@ def render_list_tests():
 
             print('<div class="collapse" id="boardstable%s">' % type_sn)
             print('<div class="list-group list-group-flush">')
-            for full_id in boards:
+            for full_id in sorted(boards):
                 board_id = board_info[full_id]['board_id']
                 failed = {}
                 outcomes = {}
