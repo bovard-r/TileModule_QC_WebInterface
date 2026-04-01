@@ -163,7 +163,7 @@ def format_id(id):
     return id[0:3]+"-"+id[3:5]+"-"+id[5:9]+"-"+id[9:]
 
 def gather_tile_info(cur):
-    query="SELECT COUNT(*), batch, typecode from COMPONENT_STOCK WHERE alt_barcode is NULL AND component_id NOT IN (SELECT component_id from COMPONENT_USAGE) GROUP BY typecode"
+    query="SELECT COUNT(*), batch, typecode from COMPONENT_STOCK WHERE alt_barcode is NULL AND component_id NOT IN (SELECT component_id from COMPONENT_USAGE) GROUP BY typecode, batch"
     cur.execute(query)
     tileinfo={}
     for row in cur:
