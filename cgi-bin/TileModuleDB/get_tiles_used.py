@@ -342,7 +342,10 @@ def verify_selection(cur, of, info):
     bytile={}
     assigned={}
     tm=info.getvalue("barcode")[5:8]
-    pref="TI-" # needs work!!!!
+    if info.getvalue("barcode")[8]=='C':
+        pref="TC-"
+    else:
+        pref="TI-" # needs work!!!!
     mymemory={}
     for name in info.keys():
         value=info.getvalue(name)
@@ -365,7 +368,11 @@ def verify_selection(cur, of, info):
             bytile[tiletype][value]+=1
 
     for tiletype in bytile:
-        assigned[tiletype]=pick_tiles(cur, pref+str(tiletype), bytile[tiletype])
+        if isinstance(tiletype,str):
+            tiletypestr=tiletype
+        else:
+            tiletypestr="%02d"%(tiletype)
+        assigned[tiletype]=pick_tiles(cur, pref+tiletypestr, bytile[tiletype])
     
     of.write("<table><tr><th>Ring<th>IPhi<th>Batch<th>Barcode</tr>")
     for ring in sorted(byring.keys()):
@@ -380,7 +387,7 @@ def verify_selection(cur, of, info):
                     barcode=mymemory['tile_%02d_%02d'%(iphi,ring)]
                 else:
                     if len(assigned[tiletype][byr])==0:
-                        print("Ran out of %s!"%tiletype)
+                        print("Ran out of %s at %d,%d!<br>"%(tiletype,iphi,ring))
                         continue
                     barcode=assigned[tiletype][byr][0]
                     mymemory['tile_%02d_%02d'%(iphi,ring)]=barcode
