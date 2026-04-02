@@ -3,8 +3,6 @@ import cgi, html
 import cgitb
 import base
 import sys
-sys.path.insert(0, '../../hgcal-label-info/label-authority/')
-import label_authority as la
 
 from connect import connect
 from connect import connect_admin
@@ -30,20 +28,21 @@ if action == "submit":
     db = connect_admin(password)
     cur = db.cursor()
 
-    TB = la.getMajorType(mt)
+    cur.execute("select type_id from Board_type where type_sn like '%s'" % (mt + "%"))
+    x = cur.fetchall()
+    for type_id in x:
 
-    for s in TB.getAllSubtypes():
-        code = mt + s
-        cur.execute("select type_id from Board_type where type_sn='%s'" % code)
-        type_id = cur.fetchall()[0][0]
-
-        cur.execute(f"select * from Type_test_stitch where type_id={type_id} and test_type_id={test}")
+        cur.execute(f"select * from Type_test_stitch where type_id={type_id[0]} and test_type_id={test}")
         rows = cur.fetchall()
         if not rows:
-            cur.execute("insert into Type_test_stitch (type_id, test_type_id) values (%s, %s)" % (type_id, test))
-            db.commit()
+            cur.execute("insert into Type_test_stitch (type_id, test_type_id) values (%s, %s)" % (type_id[0], test))
+            print('<h4> Test stitched successfully </h4>')
 
-    print('<h4> Test stitched successfully </h4>')
+        else:
+            print('<h4> Error: Test already added for this board! </h4>')
+
+    db.commit()
+
 
 else:
 
@@ -60,6 +59,7 @@ else:
     print('<select class="form-control" name="major_type">')
 
     print("<option value='TM'>Module</option>")
+    print("<option value='TQ'>Protomodule</option>")
     print("<option value='TB'>PCB</option>")
                         
     print('</select>')
