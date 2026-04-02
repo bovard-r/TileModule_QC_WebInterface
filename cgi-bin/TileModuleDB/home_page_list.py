@@ -97,6 +97,14 @@ def render_list_tests():
         name = next(x for x,y in GROUPS.items() if re.match(y, type_sn))
         groups[name].append((type_sn,boards))
 
+    cur.execute('''
+            select S.barcode
+            from COMPONENT_STOCK S
+            join COMPONENT_USAGE U on S.component_id=U.component_id
+            where S.barcode in (select full_id from Board)
+            ''')
+    assembled_board_ids = set(row[0] for row in cur.fetchall())
+
     for name, group_boards in groups.items():
 
         print('<div class="col-md-11 mx-4 my-4"><table class="table table-bordered table-hover table-active">')
@@ -148,7 +156,7 @@ def render_list_tests():
                     else:
                         status = 'Awaiting'
                 else:
-                    if board_id in shipped_board_ids:
+                    if full_id in assembled_board_ids:
                         status = 'Shipped'
                     elif num_tests_failed != 0:
                         status = 'Failed'
