@@ -195,6 +195,10 @@ def make_tile_array(cur,of,tmbc,tbbc,mat):
     tm=tmbc[5:8]
 
     tileinfo=gather_tile_info(cur)
+    if mat=='M':
+        ttype='TI'
+    else:
+        ttype='TC'
 
     of.write('<h1>Tile Assignment for %s</h1>'%format_id(tmbc))
     
@@ -225,7 +229,7 @@ def make_tile_array(cur,of,tmbc,tbbc,mat):
                 tilestr="%02d"%(tile)
             name="tile_%02d_%02d"%(iphi,ring)
             of.write('<select name=%s><option value="QC">QC'%name)
-            info=tileinfo['T%s-%s'%(mat,tilestr)]
+            info=tileinfo['%s-%s'%(ttype,tilestr)]
             maxbatchn=max(info, key=info.get)
             for sb in info:
                 of.write('<option value="SB%s" %s>SB%s'%(sb,"selected" if sb==maxbatchn else "",sb))
@@ -458,7 +462,7 @@ def write_xml(of, cur, tbm):
     of.write('    <KIND_OF_PART>%s</KIND_OF_PART>\n'%(kop))
     of.write('    <BARCODE>%s</BARCODE>\n'%tbm)
     of.write('    <SERIAL_NUMBER>%s</SERIAL_NUMBER>\n'%tbm)
-    of.write('    <LOCATION>FNAL</LOCATION>\n')
+    of.write('    <LOCATION>FNAL Lab 5 and 6</LOCATION>\n')
     of.write('    <INSTITUTION>Fermi National Accelerator Lab.</INSTITUTION>\n')
     of.write('    <MANUFACTURER>FNAL</MANUFACTURER>\n')
     of.write('    <NAME_LABEL>%s %s</NAME_LABEL>\n'%(basename,tbm))
@@ -467,10 +471,15 @@ def write_xml(of, cur, tbm):
     of.write('    <BATCH_NUMBER>%s</BATCH_NUMBER>\n'%batch)
     of.write('    <CHILDREN>\n')
 
-    cur.execute("SELECT COMPONENT_STOCK.barcode, COMPONENT_USAGE.used_iphi, COMPONENT_USAGE.used_ring, COMPONENT_STOCK.alt_barcode FROM COMPONENT_STOCK INNER JOIN COMPONENT_USAGE ON COMPONENT_STOCK.component_id=COMPONENT_USAGE.component_id WHERE COMPONENT_USAGE.used_in_barcode='%s'"%tbm)
-    for (bc,iphi,ring,abc) in cur:
+    query="SELECT COMPONENT_STOCK.barcode, COMPONENT_USAGE.used_iphi, COMPONENT_USAGE.used_ring, COMPONENT_STOCK.alt_barcode FROM COMPONENT_STOCK INNER JOIN COMPONENT_USAGE ON COMPONENT_STOCK.component_id=COMPONENT_USAGE.component_id WHERE COMPONENT_USAGE.used_in_barcode='%s'"%tbm
+#    of.write(query)
+    cur.execute(query)
+    rows=cur.fetchall()
+#    of.write(str(len(rows)))
+    for (bc,iphi,ring,abc) in rows:
         if abc is not None:
             bc=abc
+#        of.write(bc)
         if bc[3:5] not in ('TI','TC','TB'):
             continue
         of.write('      <PART>\n')

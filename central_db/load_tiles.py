@@ -13,7 +13,6 @@ def get_all_tiles(cur):
     for row in cur:
         all_tiles.add(row[0])
     cur.execute("SELECT barcode FROM COMPONENT_STOCK WHERE typecode LIKE 'TC-%'")
-    all_tiles=set()
     for row in cur:
         all_tiles.add(row[0])
     return all_tiles
