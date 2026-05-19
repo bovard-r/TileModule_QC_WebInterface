@@ -31,7 +31,7 @@ tile_config={
         10: (10, 10, 10, 10, 10, 10, 10, 10),
         9 : (8, 8, 8, 8, 8, 8, 8, 8),
         8 : (8, 8, 8, 8, 8, 8, 8, 8),
-        7 : (6, 'S2', 6, 6, 6, 6, 'S2', 6),
+        7 : (6, 'S2', 6, 6, 6, 6, 6, 'S2'),
         6 : (6, 6, 6, 6, 6, 6, 6, 6)
     },
     'G3F' : {
@@ -353,13 +353,15 @@ def verify_selection(cur, of, info):
     mymemory={}
     for name in info.keys():
         value=info.getvalue(name)
-        if name[:4]!='tile': continue
+        if name[:4]!='tile':
+            continue
         iphi=int(name[5:7])
         ring=int(name[8:10])
         if ring not in byring:
             byring[ring]=[None]*8
         byring[ring][iphi]=value
-        tiletype=tile_config[tm][ring][iphi]
+        tiletype=tile_config[tm][ring][7-iphi]
+        #print(tiletype,tm,value,ring,iphi,"<br>")
         if tiletype not in bytile:
             bytile[tiletype]=Counter()
         if value=='QC':
@@ -377,13 +379,14 @@ def verify_selection(cur, of, info):
         else:
             tiletypestr="%02d"%(tiletype)
         assigned[tiletype]=pick_tiles(cur, pref+tiletypestr, bytile[tiletype])
+        #print(tiletype,bytile[tiletype],len(assigned[tiletype]),"<br>")
     
     of.write("<table><tr><th>Ring<th>IPhi<th>Batch<th>Barcode</tr>")
     for ring in sorted(byring.keys()):
         for iphi in range(0,8):
             if byring[ring][iphi] is not None:
                 barcode=""
-                tiletype=tile_config[tm][ring][iphi]
+                tiletype=tile_config[tm][ring][7-iphi]
                 if tiletype is None:
                     continue
                 byr=byring[ring][iphi]
