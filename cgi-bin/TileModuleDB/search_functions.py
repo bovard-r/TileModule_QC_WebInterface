@@ -196,7 +196,7 @@ def Filter():
     for i in range(len(columns)):
         widget_constructor, trigger = t[i]
         if t[i] == multi_choice:
-            possible_vals = np.unique(data[i]).tolist()
+            possible_vals = np.array(sorted(set(map(str,data[i])))).tolist()
             widget = widget_constructor(possible_vals, columns[i])
             typ = 'multi_choice'
             widget.js_on_change(trigger, CustomJS(args=dict(src=ds), code='src.change.emit()'))
